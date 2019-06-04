@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -93,7 +94,7 @@ func readTarget(fn string) ([]mTarget, error) {
 				Code: vs[0],
 				Name: vs[1],
 			}
-			v, err := strconv.ParseFloat(vs[2], 32)
+			v, err := strconv.ParseFloat(strings.Replace(vs[2], ",", "", -1), 32)
 			if err == nil {
 				o.Cash = float32(v)
 			}
@@ -113,12 +114,13 @@ func appAction(ctx *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(dicts)
+	log.Println("DICT", dicts)
 	var sdata, err1 = readSource(ctx.String(argSOURCE))
 	if err1 != nil {
 		log.Fatal(err1)
 	}
-	var sdata1 = []mKeyFloat{}
+	// fmt.Println(sdata)
+	sdata1 := []mKeyFloat{}
 	for _, ss := range sdata {
 		for _, d := range dicts {
 			if ss.Code == d.Name {
@@ -127,11 +129,11 @@ func appAction(ctx *cli.Context) {
 					Value: ss.Cash,
 				}
 				var find = false
-				for _, me := range sdata1 {
+				for index, me := range sdata1 {
 					if me.Key == m.Key {
-						me.Value += m.Value
+						// fmt.Println("DEBUG", me, m)
+						sdata1[index].Value = me.Value + m.Value
 						find = true
-						break
 					}
 				}
 				if !find {
@@ -140,7 +142,7 @@ func appAction(ctx *cli.Context) {
 			}
 		}
 	}
-	log.Println(sdata1, len(sdata1))
+	// log.Println(sdata1, len(sdata1))
 	var tdata, err2 = readTarget(ctx.String(argTARGET))
 	if err1 != nil {
 		log.Fatal(err2)
@@ -152,9 +154,9 @@ func appAction(ctx *cli.Context) {
 			Value: tt.Cash,
 		}
 		var find = false
-		for _, me := range tdata1 {
+		for index, me := range tdata1 {
 			if me.Key == m.Key {
-				me.Value += m.Value
+				tdata1[index].Value = me.Value + m.Value
 			}
 		}
 		if !find {
@@ -170,7 +172,7 @@ func appAction(ctx *cli.Context) {
 			}
 		}
 		if !find {
-			log.Println(ee)
+			fmt.Println(ee)
 		}
 	}
 }
@@ -197,5 +199,13 @@ func main() {
 	app.Action = appAction
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
+	}
+	for {
+		fmt.Println("input x to exit")
+		var end string
+		fmt.Scanln(&end)
+		if end == "x" {
+			os.Exit(0)
+		}
 	}
 }
